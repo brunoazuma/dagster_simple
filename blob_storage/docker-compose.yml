@@ -13,6 +13,27 @@ services:
     networks:
       - dagster_network
 
+  # This service runs the gRPC server that loads your user code, in both dagster-webserver
+  # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # run launcher to use this same image when launching runs in a new container as well.
+  # Multiple containers like this can be deployed separately - each just needs to run on
+  # its own port, and have its own entry in the workspace.yaml file that's loaded by the
+  # webserver.
+  dagster_user_code:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_user_code
+    container_name: dagster_user_code
+    image: docker_example_user_code_image
+    restart: always
+    environment:
+      DAGSTER_POSTGRES_USER: "dagster_pg_user"
+      DAGSTER_POSTGRES_PASSWORD: "dagster_pg_password"
+      DAGSTER_POSTGRES_DB: "dagster_pg_db"
+      DAGSTER_CURRENT_IMAGE: "dagster_user_code"
+    networks:
+      - dagster_network
+
   # This service runs dagster-webserver, which loads your user code from the user code container.
   # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
   # a queue and later dequeued and launched by dagster-daemon.
@@ -46,6 +67,9 @@ services:
       - dagster_network
     depends_on:
       - dagster_db
+      - dagster_user_code
+      - bronze_db
+      - silver_db
 
   # This service runs dagster-webserver, which loads your user code from the user code container.
   # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
@@ -72,8 +96,7 @@ services:
       - datalake_network
     depends_on:
       - dagster_db
-
-# docker run -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address ":9001"
+      - dagster_user_code
 
   bronze_db:
     # Bronze database for ingestion
