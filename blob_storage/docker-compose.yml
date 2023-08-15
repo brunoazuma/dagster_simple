@@ -82,6 +82,8 @@ services:
     environment:
       MINIO_ROOT_USER: bronze_db_admin
       MINIO_ROOT_PASSWORD: bronze_db_password
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     expose:
       - 9000
       - 9001
@@ -96,8 +98,20 @@ services:
       - --console-address
       - :9001
 
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - bronze_db
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://bronze_db:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      /usr/bin/mc mb minio/${MINIO_BUCKET_NAME};
+      /usr/bin/mc policy set public minio/${MINIO_BUCKET_NAME};
+      exit 0;
+      "
+
   silver_db:
-    # Bronze database for ingestion
+    # Silver database for transformed data
     image: postgres:11
     container_name: silver_db
     environment:
