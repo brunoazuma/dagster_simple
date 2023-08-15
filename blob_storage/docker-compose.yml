@@ -1,0 +1,94 @@
+version: "3.7"
+
+services:
+  # This service runs the postgres DB used by dagster for run storage, schedule storage,
+  # and event log storage.
+  dagster_db:
+    image: postgres:11
+    container_name: dagster_db
+    environment:
+      POSTGRES_USER: "dagster_pg_user"
+      POSTGRES_PASSWORD: "dagster_pg_password"
+      POSTGRES_DB: "dagster_pg_db"
+    networks:
+      - dagster_network
+
+  # This service runs dagster-webserver, which loads your user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  dagster_webserver:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+      args:
+        PIP_PROXY: "$http_proxy" # If an http proxy is defined, pass it to pip
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    container_name: dagster_webserver
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_PG_USERNAME: "dagster_pg_user"
+      DAGSTER_PG_PASSWORD: "dagster_pg_password"
+      DAGSTER_PG_DB: "dagster_pg_db"
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - dagster_network
+    depends_on:
+      - dagster_db
+
+  # This service runs dagster-webserver, which loads your user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  dagster_daemon:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+      args:
+        PIP_PROXY: "$http_proxy" # If an http proxy is defined, pass it to pip
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: dagster_daemon
+    environment:
+      DAGSTER_PG_USERNAME: "dagster_pg_user"
+      DAGSTER_PG_PASSWORD: "dagster_pg_password"
+      DAGSTER_PG_DB: "dagster_pg_db"
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - dagster_network
+      - datalake_network
+    depends_on:
+      - dagster_db
+
+  gold_silver_db:
+    # Bronze database for ingestion
+    image: postgres:11
+    container_name: gold_silver_db
+    environment:
+      POSTGRES_USER: "gold_silver_db_user"
+      POSTGRES_PASSWORD: "gold_silver_db_password"
+      POSTGRES_DB: "gold_silver_db"
+    networks:
+      - datalake_network
+    command: -p 5433
+            
+networks:
+  dagster_network:
+    driver: bridge
+    name: dagster_network
+  datalake_network:
+    driver: bridge
+    name: datalake_network
