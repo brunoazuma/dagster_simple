@@ -16,9 +16,9 @@ RUN mkdir -p $DAGSTER_HOME
 COPY dagster.yaml workspace.yaml $DAGSTER_HOME
 
 # Copy your code and workspace and dagster instance YAML to /opt/dagster/dagster_home/
-COPY ./minimal/ $DAGSTER_HOME/minimal
+COPY ./blob_storage/ $DAGSTER_HOME/blob_storage
 
 # Copy your code and workspace and dagster instance YAML to /opt/dagster/dagster_home/
-COPY ./minimal_tests/ $DAGSTER_HOME/minimal_tests
+COPY ./blob_storage_tests/ $DAGSTER_HOME/blob_storage_tests
 
 WORKDIR $DAGSTER_HOME
