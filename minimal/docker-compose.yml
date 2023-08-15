@@ -73,16 +73,20 @@ services:
     depends_on:
       - dagster_db
 
-  gold_silver_db:
+  silver_db:
     # Bronze database for ingestion
     image: postgres:11
-    container_name: gold_silver_db
+    container_name: silver_db
     environment:
-      POSTGRES_USER: "gold_silver_db_user"
-      POSTGRES_PASSWORD: "gold_silver_db_password"
-      POSTGRES_DB: "gold_silver_db"
+      POSTGRES_USER: "silver_db_user"
+      POSTGRES_PASSWORD: "silver_db_password"
+      POSTGRES_DB: "silver_db"
     networks:
       - datalake_network
+    expose:
+      - "5433"
+    ports:
+      - "5433:5433"
     command: -p 5433
             
 networks:
