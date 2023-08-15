@@ -1,12 +1,17 @@
 FROM python:3.10-slim
 
+ARG PIP_PROXY
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+
+ENV DAGSTER_MODULE_NAME=blob_storage
+
 # Checkout and install dagster libraries needed to run the gRPC server
 # exposing your repository to dagster-webserver and dagster-daemon, and to load the DagsterInstance
 
 RUN pip install \
     dagster \
-    dagster-postgres \
-    dagster-docker
+    dagster-postgres
 
 # Add repository code
 RUN mkdir -p $DAGSTER_HOME
@@ -15,16 +20,12 @@ RUN mkdir -p $DAGSTER_HOME
 COPY dagster.yaml workspace.yaml $DAGSTER_HOME
 
 # Copy your code and workspace and dagster instance YAML to /opt/dagster/dagster_home/
-COPY ./blob_storage/ $DAGSTER_HOME/blob_storage
+COPY ./$DAGSTER_MODULE_NAME/ $DAGSTER_HOME/$DAGSTER_MODULE_NAME
 
 # Copy your code and workspace and dagster instance YAML to /opt/dagster/dagster_home/
-COPY ./blob_storage_tests/ $DAGSTER_HOME/blob_storage_tests
+COPY ./$DAGSTER_MODULE_NAME_tests/ $DAGSTER_HOME/$DAGSTER_MODULE_NAME
 
 # Run dagster gRPC server on port 4000
 EXPOSE 4000
 
 WORKDIR $DAGSTER_HOME
-
-# CMD allows this to be overridden from run launchers or executors that want
-# to run other commands against your repository
-CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-f", "repo.py"]
