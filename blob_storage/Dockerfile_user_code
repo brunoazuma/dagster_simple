@@ -13,6 +13,8 @@ RUN pip install \
     dagster \
     dagster-postgres
 
+RUN pip install pandas
+
 # Add repository code
 RUN mkdir -p $DAGSTER_HOME
 
