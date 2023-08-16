@@ -4,7 +4,7 @@ ARG PIP_PROXY
 
 RUN pip install dagster dagster-postgres dagster-webserver
 
-RUN pip install pandas
+RUN pip install pandas dagster_aws
 
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
 

@@ -4,19 +4,19 @@ from dagster import (
     MetadataValue,
     asset,
     get_dagster_logger,
-) # import the `dagster` library
+)  # import the `dagster` library
 
 from .resources import IBGE_api
 
+
 @asset(
-        io_manager_key="file_io_manager",
+    io_manager_key="s3_io_manager",
 )
 def ufs(
     context: AssetExecutionContext,
     ibge_api: IBGE_api
-    ) -> list:
+) -> list:
     ufs = ibge_api.get_UF().json()
-
 
     context.add_output_metadata(
         metadata={
@@ -25,10 +25,11 @@ def ufs(
         }
     )
 
-    return ufs # return list and the I/O manager will save it
+    return ufs  # return list and the I/O manager will save it
+
 
 @asset(
-        io_manager_key="file_io_manager",
+    io_manager_key="s3_io_manager",
 )
 def municipios(
     context: AssetExecutionContext,
@@ -54,8 +55,9 @@ def municipios(
 
     return results  # return list and the I/O manager will save it
 
+
 @asset(
-        io_manager_key="db_io_manager",
+    io_manager_key="db_io_manager",
 )
 def municipios_silver(
     context: AssetExecutionContext,

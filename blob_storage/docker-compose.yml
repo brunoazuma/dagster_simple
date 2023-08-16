@@ -36,6 +36,10 @@ services:
       DAGSTER_GRPC_PORT: "4000"
       DAGSTER_WORKING_DIRECTORY: $DAGSTER_HOME
       DAGSTER_MODULE_NAME: $DAGSTER_MODULE_NAME
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL}
       SILVER_DB_HOST: ${SILVER_DB_HOST}
       SILVER_DB_PORT: ${SILVER_DB_PORT}
       SILVER_DB_USER: ${SILVER_DB_USER}
@@ -84,7 +88,7 @@ services:
     depends_on:
       - dagster_db
       - dagster_user_code
-      - bronze_db
+      - minio
       - silver_db
 
   # This service runs dagster-webserver, which loads your user code from the user code container.
@@ -109,20 +113,17 @@ services:
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:
       - dagster_network
-      - datalake_network
     depends_on:
       - dagster_db
       - dagster_user_code
 
-  bronze_db:
+  minio:
     # Bronze database for ingestion
     image: minio/minio
-    container_name: bronze_db
+    container_name: minio
     environment:
-      MINIO_ROOT_USER: bronze_db_admin
-      MINIO_ROOT_PASSWORD: bronze_db_password
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     expose:
       - 9000
       - 9001
@@ -139,11 +140,14 @@ services:
 
   createbuckets:
     image: minio/mc
+    container_name: createbuckets
     depends_on:
-      - bronze_db
+      - minio
+    networks:
+      - datalake_network
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc alias set minio http://bronze_db:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      /usr/bin/mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
       /usr/bin/mc mb minio/${MINIO_BUCKET_NAME};
       /usr/bin/mc policy set public minio/${MINIO_BUCKET_NAME};
       exit 0;

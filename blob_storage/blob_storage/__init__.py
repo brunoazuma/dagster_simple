@@ -1,11 +1,12 @@
 from dagster import (
     AssetSelection,
     Definitions,
+    EnvVar,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_modules,
-    FilesystemIOManager,  # Update the imports at the top of the file to also include this
 )
+from dagster_aws.s3 import ConfigurablePickledObjectS3IOManager, S3Resource
 
 from . import assets
 from .resources import IBGE_api
@@ -17,10 +18,6 @@ municipios_job = define_asset_job("municipios_job", selection=AssetSelection.all
 
 municipios_schedule = ScheduleDefinition(
     job=municipios_job, cron_schedule="*/10 * * * *"  # every 10 minutes
-)
-
-file_io_manager = FilesystemIOManager(
-    base_dir="data",  # Path is built relative to where `dagster dev` is run
 )
 
 ibge_api = IBGE_api()
@@ -39,7 +36,13 @@ defs = Definitions(
     assets=all_assets,
     schedules=[municipios_schedule],
     resources={
-        "file_io_manager": file_io_manager,
+        "s3_io_manager": ConfigurablePickledObjectS3IOManager(
+            s3_resource=S3Resource(
+                endpoint_url=EnvVar('MINIO_ENDPOINT_URL'),
+                aws_access_key_id=EnvVar('MINIO_ROOT_USER'),
+                aws_secret_access_key=EnvVar('MINIO_ROOT_PASSWORD'),
+                ), s3_bucket=EnvVar('MINIO_BUCKET_NAME')
+        ),
         'ibge_api': ibge_api,
         'db_io_manager': db_io_manager
     },
