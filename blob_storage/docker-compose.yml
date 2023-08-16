@@ -28,9 +28,9 @@ services:
     container_name: dagster_user_code
     image: docker_example_user_code_image
     environment:
-      DAGSTER_POSTGRES_USER: "dagster_pg_user"
-      DAGSTER_POSTGRES_PASSWORD: "dagster_pg_password"
-      DAGSTER_POSTGRES_DB: "dagster_pg_db"
+      DAGSTER_PG_USERNAME: "dagster_pg_user"
+      DAGSTER_PG_PASSWORD: "dagster_pg_password"
+      DAGSTER_PG_DB: "dagster_pg_db"
       DAGSTER_CURRENT_IMAGE: "dagster_user_code"
       DAGSTER_GRPC_HOST: "0.0.0.0"
       DAGSTER_GRPC_PORT: "4000"
