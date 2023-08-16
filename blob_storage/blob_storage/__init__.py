@@ -27,11 +27,11 @@ ibge_api = IBGE_api()
 
 db_io_manager = postgres_pandas_io_manager.configured(
     {
-        'server': 'silver_db',
-        'db': 'silver_db',
-        'uid': 'silver_db_user',
-        'pwd': 'silver_db_password',
-        'port': '5433',
+        'server': {'env': 'SILVER_DB_HOST'},
+        'db': {'env': 'SILVER_DB_NAME'},
+        'uid': {'env': 'SILVER_DB_USER'},
+        'pwd': {'env': 'SILVER_DB_PASSWORD'},
+        'port': {'env': 'SILVER_DB_PORT'},
     }
 )
 

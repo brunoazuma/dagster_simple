@@ -36,6 +36,11 @@ services:
       DAGSTER_GRPC_PORT: "4000"
       DAGSTER_WORKING_DIRECTORY: $DAGSTER_HOME
       DAGSTER_MODULE_NAME: $DAGSTER_MODULE_NAME
+      SILVER_DB_HOST: ${SILVER_DB_HOST}
+      SILVER_DB_PORT: ${SILVER_DB_PORT}
+      SILVER_DB_USER: ${SILVER_DB_USER}
+      SILVER_DB_PASSWORD: ${SILVER_DB_PASSWORD}
+      SILVER_DB_NAME: ${SILVER_DB_NAME}
     entrypoint:
       - dagster
       - api
@@ -43,6 +48,7 @@ services:
     restart: always
     networks:
       - dagster_network
+      - datalake_network
 
   # This service runs dagster-webserver, which loads your user code from the user code container.
   # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
@@ -146,18 +152,18 @@ services:
   silver_db:
     # Silver database for transformed data
     image: postgres:11
-    container_name: silver_db
+    container_name: ${SILVER_DB_HOST}
     environment:
-      POSTGRES_USER: "silver_db_user"
-      POSTGRES_PASSWORD: "silver_db_password"
-      POSTGRES_DB: "silver_db"
+      POSTGRES_USER: ${SILVER_DB_USER}
+      POSTGRES_PASSWORD: ${SILVER_DB_PASSWORD}
+      POSTGRES_DB: ${SILVER_DB_NAME}
     networks:
       - datalake_network
     expose:
-      - "5433"
+      - "${SILVER_DB_PORT}"
     ports:
-      - "5433:5433"
-    command: -p 5433
+      - "${SILVER_DB_PORT}:${SILVER_DB_PORT}"
+    command: -p ${SILVER_DB_PORT}
             
 networks:
   dagster_network:
